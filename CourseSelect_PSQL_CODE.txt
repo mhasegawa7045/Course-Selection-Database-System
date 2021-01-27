@@ -1,0 +1,159 @@
+create TYPE Major AS ENUM ('G', 'U');
+
+
+create table Student_Type( Year_Type_ID int Primary Key, Year_Type_Title Major);
+
+
+create table Graduate(Year_Type_ID int Primary Key REFERENCES Student_Type, Grad_Title text);
+
+create table Undergraduate(Year_Type_ID int Primary Key REFERENCES Student_Type, Under_Title text);
+
+
+
+
+create table Student( Stu_ID int Primary Key, Stu_FName text, Stu_LName text);
+
+create table Course( C_ID int Primary Key, C_Name text, C_Section int, Year_Type Major);
+
+create table Department( Dept_ID int Primary Key, Dept_Name text unique, Dept_Head_Name text);
+
+create table Course_Offering( CO_ID int Primary Key, Year int, Semester char(2));
+
+create table Professor( Prof_ID int Primary Key, Prof_FName text, Prof_LName text);
+
+
+
+ALTER TABLE public.Student ADD COLUMN Year_Type_ID int, 
+ADD CONSTRAINT fk_test FOREIGN KEY (Year_Type_ID) REFERENCES Student_Type (Year_Type_ID);
+
+ALTER TABLE public.Course_Offering ADD COLUMN C_ID int, 
+ADD CONSTRAINT fk_test1 FOREIGN KEY (C_ID) REFERENCES Course (C_ID);
+
+ALTER TABLE public.Course_Offering ADD COLUMN Prof_ID int, 
+ADD CONSTRAINT fk_test2 FOREIGN KEY (Prof_ID) REFERENCES Professor (Prof_ID);
+
+ALTER TABLE public.Course ADD COLUMN Dept_ID int, 
+ADD CONSTRAINT fk_test3 FOREIGN KEY (Dept_ID) REFERENCES Department(Dept_ID);
+
+ALTER TABLE public.Course ADD COLUMN Dept_Name text, 
+ADD CONSTRAINT fk_test4 FOREIGN KEY (Dept_Name) REFERENCES Department(Dept_Name);
+
+ALTER TABLE public.Department ADD COLUMN Prof_ID int, 
+ADD CONSTRAINT fk_test6 FOREIGN KEY (Prof_ID) REFERENCES Professor (Prof_ID);
+
+ALTER TABLE public.Professor ADD COLUMN Dept_ID int, 
+ADD CONSTRAINT fk_test12 FOREIGN KEY (Dept_ID) REFERENCES Department(Dept_ID);
+
+
+create table Student_Course_Of( CO_ID int Primary Key REFERENCES Course_Offering);
+
+
+ALTER TABLE public.Student_Course_Of ADD COLUMN Stu_ID int, 
+ADD CONSTRAINT fk_test7 FOREIGN KEY (Stu_ID) REFERENCES Student(Stu_ID);
+
+
+
+select * From Student;
+
+
+
+################################################
+
+#need to work on
+
+INSERT INTO Student_Type (Year_Type_ID, Year_Type_Title) values
+('8906', 'U'),
+('8765', 'U'),
+('8784', 'G');
+
+############################################################
+
+# good 
+INSERT INTO Student (Stu_ID, Stu_FName, Stu_LName, Year_Type_ID) values
+('12345', 'Courtney', 'Capone',  (SELECT Year_Type_ID from Student_Type WHERE Year_Type_ID='8906')),
+('12344', 'Jacob', 'Gomez', (SELECT Year_Type_ID from Student_Type WHERE Year_Type_ID='8765')),
+('12346', 'Selena', 'Smith', (SELECT Year_Type_ID from Student_Type WHERE Year_Type_ID='8784'));
+
+
+############################################################
+
+#need to work on
+INSERT INTO Undergraduate (Year_Type_ID, Under_Title) values
+((SELECT Year_Type_ID from Student_Type WHERE Year_Type_ID='8906'), 'Mechanical Engineering'),
+((SELECT Year_Type_ID from Student_Type WHERE Year_Type_ID='8765'), 'Electrical Engineering');
+
+
+
+############################################################
+
+INSERT INTO Graduate (Year_Type_ID, Grad_Title) values
+((SELECT Year_Type_ID from Student_Type WHERE Year_Type_ID='8784'), 'Humanities');
+
+
+############################################################
+
+#NEW 2
+
+INSERT INTO Department (Dept_ID, Dept_Name, Dept_Head_Name, Prof_ID) values
+('26849716', 'EGN', 'Elisabeth Kames', (SELECT Prof_ID from Professor WHERE Prof_ID='556789102')),
+('26847723', 'HUM', 'Kathryn Miller', (SELECT Prof_ID from Professor WHERE Prof_ID='556789445'));
+
+####################################################################################
+
+
+#NEW
+INSERT INTO Professor (Prof_ID, Prof_FName, Prof_LName, Dept_ID) values
+('556789102', 'Elisabeth', 'Kames', (SELECT Dept_ID from Department WHERE Dept_ID='26849716'));
+
+INSERT INTO Professor (Prof_ID, Prof_FName, Prof_LName, Dept_ID) values
+('556784509', 'Mary', 'Vollaro', (SELECT Dept_ID from Department WHERE Dept_ID='26849716'));
+
+INSERT INTO Professor (Prof_ID, Prof_FName, Prof_LName, Dept_ID) values
+('556789445', 'Kathryn', 'Miller', (SELECT Dept_ID from Department WHERE Dept_ID='26847723'));
+
+####################################################################################
+
+
+INSERT INTO Course (C_ID, C_Name, C_Section, Dept_ID, Dept_Name, Year_Type) values
+('14883', 'Skills And Design 1', '2001', (SELECT Dept_ID from Department WHERE Dept_ID='26849716'),  (SELECT Dept_Name from Department WHERE Dept_Name='EGN'), 'U'),
+('15490', 'Mechanical Lab Design 1', '3015', (SELECT Dept_ID from Department WHERE Dept_ID='26849716'),  (SELECT Dept_Name from Department WHERE Dept_Name='EGN'), 'U'),
+('16730', 'Sexuality, Gender, and Visual Representation', '5720', (SELECT Dept_ID from Department WHERE Dept_ID='26847723'),  (SELECT Dept_Name from Department WHERE Dept_Name='HUM'), 'G');
+
+
+
+#####################################################################################
+
+
+INSERT INTO Course_Offering (CO_ID, Year, Semester, C_ID, Prof_ID) values
+('99818', '2019', 'SP', (SELECT C_ID from Course WHERE C_ID='14883'), (SELECT Prof_ID from Professor WHERE Prof_ID='556789102')),
+('97683', '2020', 'FA', (SELECT C_ID from Course WHERE C_ID='14883'), (SELECT Prof_ID from Professor WHERE Prof_ID='556784509')),
+('99423', '2017', 'SU', (SELECT C_ID from Course WHERE C_ID='15490'), (SELECT Prof_ID from Professor WHERE Prof_ID='556789102')),
+('99485', '2020', 'SP', (SELECT C_ID from Course WHERE C_ID='16730'), (SELECT Prof_ID from Professor WHERE Prof_ID='556789445'));
+
+
+####################################################################################
+
+
+INSERT INTO Student_Course_Of (CO_ID, Stu_ID) values
+((SELECT CO_ID from Course_Offering WHERE CO_ID='99818'), (SELECT Stu_ID from Student WHERE Stu_ID='12345')),
+((SELECT CO_ID from Course_Offering WHERE CO_ID='97683'), (SELECT Stu_ID from Student WHERE Stu_ID='12344')),
+((SELECT CO_ID from Course_Offering WHERE CO_ID='99423'), (SELECT Stu_ID from Student WHERE Stu_ID='12345')),
+((SELECT CO_ID from Course_Offering WHERE CO_ID='99485'), (SELECT Stu_ID from Student WHERE Stu_ID='12346'));
+
+
+
+
+
+######################################################################################################
+
+
+UPDATE Department
+SET Prof_ID = (SELECT Prof_ID from Professor WHERE Prof_ID='556789102')
+WHERE Dept_id = 26849716;
+
+UPDATE Department
+SET Prof_ID = (SELECT Prof_ID from Professor WHERE Prof_ID='556789445')
+WHERE Dept_id = 26847723;
+
+
+
